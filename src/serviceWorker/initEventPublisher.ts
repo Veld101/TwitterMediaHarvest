@@ -7,10 +7,10 @@ import { DomainEventPublisher } from '#domain/eventPublisher'
 import {
   checkCompletedDownload,
   cleanDownloadRecord as cleanDownloadRecordHandler,
+  autoRetryInterruptedDownload,
   ignoreFilenameOverwritten,
   increaseUsageStatistics,
   initClient,
-  notifyDownloadInterrupted,
   notifyFilenameIsOverwritten,
   notifyTweetApiError,
   openDiagnosticsPageInNewTab,
@@ -93,7 +93,13 @@ const initEventPublisher = (eventPublisher?: DomainEventPublisher) => {
       cleanDownloadRecord,
     ])
     .register('download:status:interrupted', [
-      notifyDownloadInterrupted(notifier, downloadRecordRepo),
+      autoRetryInterruptedDownload(
+        notifier,
+        downloadSettingsRepo,
+        downloadRecordRepo,
+        params =>
+          new BrowserDownloadMediaFile(params.targetTweet, params.shouldPrompt)
+      ),
     ])
     .register('filename:overwritten', [
       notifyFilenameIsOverwritten(notifier, warningSettingsRepo),

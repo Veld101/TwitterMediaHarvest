@@ -6,6 +6,7 @@
 
 export { checkCompletedDownload } from './checkCompletedDownload'
 export { cleanDownloadRecord } from './cleanDownloadRecord'
+export { autoRetryInterruptedDownload } from './autoRetryInterruptedDownload'
 export { ignoreFilenameOverwritten } from './ignoreFilenameIsOverwritten'
 export { increaseUsageStatistics } from './increaseUsageStatistics'
 export { initClient } from './initClient'
