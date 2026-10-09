@@ -39,6 +39,10 @@ const dirPattern = /^[^<>:"/\\|?*][^<>:"\\|?*]+$/
 
 export class FilenameSetting extends ValueObject<FilenameSettingProps> {
   static validateDirectory(directory: string): InvalidReason | undefined {
+    // An empty directory is allowed: it means downloads are grouped directly
+    // under the aggregation folder (e.g. the account screen name).
+    if (directory.length === 0) return undefined
+
     if (directory.length > PATH_MAX) return InvalidReason.PathTooLong
 
     if (!dirPattern.test(directory))

@@ -9,12 +9,14 @@ import {
   FilenameSetting,
 } from '#domain/valueObjects/filenameSetting'
 import PatternToken from '#enums/patternToken'
-import { isProduction } from '#helpers/env'
 import type { IStorageProxy } from '#libs/storageProxy'
 import type { V4FilenameSettings } from '#schema'
 
+// Local fork: download into a folder named after the account (instead of the
+// fixed `mh-dev` / `twitter_media_harvest` root). `fileAggregation` + `groupBy:
+// Account` makes the aggregation directory the account's screen name.
 const defaultV4FilenameSettings = new FilenameSetting({
-  directory: isProduction ? 'twitter_media_harvest' : 'mh-dev',
+  directory: '',
   noSubDirectory: false,
   filenamePattern: [
     PatternToken.Account,
@@ -22,7 +24,7 @@ const defaultV4FilenameSettings = new FilenameSetting({
     PatternToken.Serial,
   ],
   groupBy: AggregationToken.Account,
-  fileAggregation: false,
+  fileAggregation: true,
 })
 
 export class V4FilenameSettingsRepository implements ISettingsVORepository<FilenameSetting> {
