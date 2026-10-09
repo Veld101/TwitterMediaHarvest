@@ -47,6 +47,11 @@ import { metrics } from '@sentry/browser'
 type DownloadTweetMediaCommand = {
   tweetInfo: TweetInfo
   xTransactionIdProvider?: TransactionIdProvider
+  /**
+   * When true, only image media files are downloaded (videos and video
+   * thumbnails are skipped).
+   */
+  imagesOnly?: boolean
 }
 
 export type DownloaderBuilderMap = {
@@ -74,9 +79,13 @@ export class DownloadTweetMedia implements AsyncUseCase<
   async process({
     tweetInfo,
     xTransactionIdProvider,
+    imagesOnly = false,
   }: DownloadTweetMediaCommand): Promise<boolean> {
     if (__METRICS__) metrics.count('usecase.downloadTweetMedia.invoked', 1)
-    const isSuccessDownloadFromCache = await this.downloadFromCache(tweetInfo)
+    const isSuccessDownloadFromCache = await this.downloadFromCache(
+      tweetInfo,
+      imagesOnly
+    )
     if (isSuccessDownloadFromCache) return this.successDownloadFromCache()
 
     if (__METRICS__) metrics.count('usecase.downloadTweetMedia.cacheMiss', 1)
@@ -109,7 +118,7 @@ export class DownloadTweetMedia implements AsyncUseCase<
 
     return isErrorResult(tweetResult)
       ? this.failDownload(tweetResult.error, tweetInfo)
-      : this.processDownload(tweetInfo, tweetResult.value)
+      : this.processDownload(tweetInfo, tweetResult.value, imagesOnly)
   }
 
   private async successDownloadFromCache(): Promise<boolean> {
@@ -117,7 +126,10 @@ export class DownloadTweetMedia implements AsyncUseCase<
     return true
   }
 
-  private async downloadFromCache(tweetInfo: TweetInfo): Promise<boolean> {
+  private async downloadFromCache(
+    tweetInfo: TweetInfo,
+    imagesOnly: boolean
+  ): Promise<boolean> {
     const { value: tweet } = await this.infra.tweetCacheRepo.get(
       tweetInfo.tweetId
     )
@@ -130,14 +142,21 @@ export class DownloadTweetMedia implements AsyncUseCase<
     const tweetVo =
       tweet instanceof Tweet ? tweet : tweet.mapBy(props => props.tweet)
 
-    return this.processDownload(tweetInfo, tweetVo)
+    return this.processDownload(tweetInfo, tweetVo, imagesOnly)
   }
 
-  private async processDownload(tweetInfo: TweetInfo, tweet: Tweet) {
+  private async processDownload(
+    tweetInfo: TweetInfo,
+    tweet: Tweet,
+    imagesOnly = false
+  ) {
     await this.saveDownloadHistory(tweetToDownloadHistory(tweet))
 
     const downloader = await this.buildDownloader(tweetInfo)
-    const downloadCommands = await this.createDownloadCommands(tweet)
+    const downloadCommands = await this.createDownloadCommands(
+      tweet,
+      imagesOnly
+    )
 
     await Promise.allSettled(
       downloadCommands.map(command => downloader.process(command))
@@ -156,14 +175,17 @@ export class DownloadTweetMedia implements AsyncUseCase<
     return downloader.isOk
   }
 
-  private async createDownloadCommands(tweet: Tweet) {
+  private async createDownloadCommands(tweet: Tweet, imagesOnly = false) {
     const filenameSetting = await this.infra.filenameSettingRepo.get()
     const { includeVideoThumbnail } = await this.infra.featureSettingsRepo.get()
-    const thumbnaildShouldBeIncluded = (mediaFile: TweetMediaFile) =>
-      includeVideoThumbnail || !mediaFile.isThumbnail
+    const mediaShouldBeIncluded = (mediaFile: TweetMediaFile) => {
+      if (imagesOnly && (mediaFile.isVideo || mediaFile.isThumbnail))
+        return false
+      return includeVideoThumbnail || !mediaFile.isThumbnail
+    }
 
     return tweetToAvailableTweetMediaFiles(tweet)
-      .filter(thumbnaildShouldBeIncluded)
+      .filter(mediaShouldBeIncluded)
       .map(tweetMediaFileToDownloadTargetWithFilenameSettting(filenameSetting))
       .map(downloadTargetToDownloadCommand)
   }

@@ -16,6 +16,12 @@ import Joi from 'joi'
 type DownloadTweetMediaMessagePayload = {
   tweetId: string
   screenName: string
+  /**
+   * When true, only image media files are downloaded (videos and video
+   * thumbnails are skipped). Used by the "download all" feature on a user's
+   * media page.
+   */
+  imagesOnly?: boolean
 }
 
 const payloadSchema: Joi.ObjectSchema<
@@ -28,6 +34,7 @@ const payloadSchema: Joi.ObjectSchema<
   payload: Joi.object<DownloadTweetMediaMessagePayload>({
     tweetId: Joi.string().required(),
     screenName: Joi.string().required(),
+    imagesOnly: Joi.boolean().optional(),
   }).required(),
 })
 

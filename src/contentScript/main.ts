@@ -17,6 +17,7 @@ import {
   TwitterKeyboardMonitor,
 } from './KeyboardMonitor'
 import './main.sass'
+import { mountMediaPageBulk } from './bulk/mediaPage'
 import TweetDeckBetaObserver from './observers/TweetDeckBetaObserver'
 import TwitterMediaObserver from './observers/TwitterMediaObserver'
 import { isBetaTweetDeck, isTwitter } from './utils/checker'
@@ -193,3 +194,6 @@ function makePageScriptSharedObject<T>(
 
   return object
 }
+
+// "Download all images" button on a user's media page.
+mountMediaPageBulk()

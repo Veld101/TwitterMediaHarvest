@@ -21,6 +21,20 @@ describe('unit test for download tweet media web ext message', () => {
     expect(value).toBeUndefined()
   })
 
+  it('can validate message with imagesOnly flag', () => {
+    const message = new DownloadTweetMediaMessage({
+      screenName: '123',
+      tweetId: '123',
+      imagesOnly: true,
+    })
+    const { value, error } = DownloadTweetMediaMessage.validate(
+      message.toObject()
+    )
+
+    expect(error).toBeUndefined()
+    expect(value?.payload.imagesOnly).toBe(true)
+  })
+
   it('can make response', () => {
     const message = new DownloadTweetMediaMessage({
       screenName: '123',

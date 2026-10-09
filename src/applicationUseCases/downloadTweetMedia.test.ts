@@ -9,6 +9,7 @@ import {
 import { FilenameSetting } from '#domain/valueObjects/filenameSetting'
 import { AggregationToken } from '#domain/valueObjects/filenameSetting'
 import { Tweet } from '#domain/valueObjects/tweet'
+import { TweetMedia } from '#domain/valueObjects/tweetMedia'
 import { TweetInfo } from '#domain/valueObjects/tweetInfo'
 import { TweetUser } from '#domain/valueObjects/tweetUser'
 import { TweetWithContent } from '#domain/valueObjects/tweetWithContent'
@@ -289,6 +290,70 @@ describe('DownloadTweetMedia', () => {
       expect(mockhistorySave).toHaveBeenCalledOnce()
       expect(mockSolutionProcess).not.toHaveBeenCalled()
       expect(mockCacheGet).toHaveBeenCalledOnce()
+    })
+  })
+
+  describe('imagesOnly', () => {
+    const makeMixedTweet = () =>
+      new Tweet({
+        id: '123',
+        createdAt: new Date(),
+        hashtags: [],
+        user: new TweetUser({
+          userId: 'user123',
+          displayName: 'Test User',
+          screenName: 'testuser',
+          isProtected: false,
+        }),
+        images: [
+          TweetMedia.create({
+            type: 'photo',
+            index: 0,
+            url: 'https://pbs.twimg.com/media/image.jpg',
+          }),
+        ],
+        videos: [
+          TweetMedia.create({
+            type: 'video',
+            index: 1,
+            url: 'https://video.twimg.com/video.mp4',
+          }),
+        ],
+      })
+
+    it('downloads only image media when imagesOnly is true', async () => {
+      jest
+        .spyOn(mockNativeFetchTweetSolution, 'process')
+        .mockResolvedValueOnce(toSuccessResult(makeMixedTweet()))
+      jest.spyOn(mockDownloadHistoryRepo, 'save').mockResolvedValueOnce()
+      const processSpy = jest
+        .spyOn(mockDownloadMediaFile, 'process')
+        .mockResolvedValue()
+
+      const result = await downloadTweetMedia.process({
+        tweetInfo: mockTweetInfo,
+        imagesOnly: true,
+      })
+
+      expect(result).toBe(true)
+      expect(processSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it('downloads image and video media when imagesOnly is not set', async () => {
+      jest
+        .spyOn(mockNativeFetchTweetSolution, 'process')
+        .mockResolvedValueOnce(toSuccessResult(makeMixedTweet()))
+      jest.spyOn(mockDownloadHistoryRepo, 'save').mockResolvedValueOnce()
+      const processSpy = jest
+        .spyOn(mockDownloadMediaFile, 'process')
+        .mockResolvedValue()
+
+      const result = await downloadTweetMedia.process({
+        tweetInfo: mockTweetInfo,
+      })
+
+      expect(result).toBe(true)
+      expect(processSpy).toHaveBeenCalledTimes(2)
     })
   })
 })
