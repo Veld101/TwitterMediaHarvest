@@ -1,7 +1,9 @@
 .sass-cache/
 .DS_Store
 .vscode/
-build/
+build/*
+!build/chrome/
+!build/chrome/**
 temp/
 *.crx
 *.pem

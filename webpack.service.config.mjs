@@ -154,7 +154,7 @@ export default (env, argv) => {
                 manifest = appendDevelopmentManifestAttributes(manifest)
               }
 
-              if (isChrome && isProduction) {
+              if (isChrome && isProduction && !env['no-key']) {
                 manifest['key'] = PublicKey.chrome
               }
 
